@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Request - GearGuard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('requests.view', id=request.id) }}" class="back-link">← Back to Request</a>
+            <h1>Edit Maintenance Request</h1>
+        </div>
+    </div>
+    
+    <div class="form-container">
+        <form method="POST" class="standard-form">
+            <div class="form-group">
+                <label for="subject">Subject *</label>
+                <input type="text" id="subject" name="subject" class="form-control" value="{{ request.subject }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description *</label>
+                <textarea id="description" name="description" class="form-control" rows="4" required>{{ request.description }}</textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="request_type">Request Type *</label>
+                    <select id="request_type" name="request_type" class="form-control" required>
+                        <option value="Corrective" {% if request.request_type == 'Corrective' %}selected{% endif %}>Corrective</option>
+                        <option value="Preventive" {% if request.request_type == 'Preventive' %}selected{% endif %}>Preventive</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="duration">Duration (Hours)</label>
+                    <input type="number" id="duration" name="duration" class="form-control" step="0.5" value="{{ request.duration or '' }}">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="scheduled_date">Scheduled Date</label>
+                    <input type="date" id="scheduled_date" name="scheduled_date" class="form-control" 
+                           value="{{ request.scheduled_date.strftime('%Y-%m-%d') if request.scheduled_date else '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="due_date">Due Date</label>
+                    <input type="date" id="due_date" name="due_date" class="form-control" 
+                           value="{{ request.due_date.strftime('%Y-%m-%d') if request.due_date else '' }}">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="notes" class="form-control" rows="3">{{ request.notes or '' }}</textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{{ url_for('requests.view', id=request.id) }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

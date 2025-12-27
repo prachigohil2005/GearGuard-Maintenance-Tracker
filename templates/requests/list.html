@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Requests - GearGuard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <h1>🔧 Maintenance Requests</h1>
+        <div class="header-actions">
+            <a href="{{ url_for('requests.create') }}" class="btn btn-primary">+ New Request</a>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filter-section">
+        <form method="GET" class="filter-form">
+            <input type="text" name="search" placeholder="Search..." 
+                   value="{{ filters.search }}" class="form-control">
+            
+            <select name="status" class="form-control">
+                <option value="">All Status</option>
+                <option value="New" {% if filters.status == 'New' %}selected{% endif %}>New</option>
+                <option value="In Progress" {% if filters.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                <option value="Repaired" {% if filters.status == 'Repaired' %}selected{% endif %}>Repaired</option>
+                <option value="Scrap" {% if filters.status == 'Scrap' %}selected{% endif %}>Scrap</option>
+            </select>
+            
+            <select name="type" class="form-control">
+                <option value="">All Types</option>
+                <option value="Corrective" {% if filters.type == 'Corrective' %}selected{% endif %}>Corrective</option>
+                <option value="Preventive" {% if filters.type == 'Preventive' %}selected{% endif %}>Preventive</option>
+            </select>
+            
+            <select name="team" class="form-control">
+                <option value="">All Teams</option>
+                {% for team in teams %}
+                <option value="{{ team.id }}" {% if filters.team|string == team.id|string %}selected{% endif %}>{{ team.name }}</option>
+                {% endfor %}
+            </select>
+            
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            <a href="{{ url_for('requests.list_requests') }}" class="btn btn-secondary">Clear</a>
+        </form>
+    </div>
+    
+    <!-- Requests Table -->
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Subject</th>
+                    <th>Equipment</th>
+                    <th>Type</th>
+                    <th>Team</th>
+                    <th>Technician</th>
+                    <th>Status</th>
+                    <th>Due Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in maintenance_requests %}
+                <tr class="{% if req.is_overdue() %}row-overdue{% endif %}">
+                    <td>#{{ req.id }}</td>
+                    <td>{{ req.subject }}</td>
+                    <td>{{ req.equipment.name }}</td>
+                    <td><span class="badge badge-{{ 'warning' if req.request_type == 'Corrective' else 'info' }}">{{ req.request_type }}</span></td>
+                    <td>{{ req.team.name }}</td>
+                    <td>{{ req.assigned_technician.name if req.assigned_technician else 'Unassigned' }}</td>
+                    <td><span class="badge {{ req.get_status_class() }}">{{ req.status }}</span></td>
+                    <td>
+                        {% if req.due_date %}
+                        {{ req.due_date.strftime('%Y-%m-%d') }}
+                        {% if req.is_overdue() %}<span class="text-danger"> ⚠️ OVERDUE</span>{% endif %}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('requests.view', id=req.id) }}" class="btn btn-sm btn-primary">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% if not maintenance_requests %}
+    <div class="empty-state">
+        <h3>No requests found</h3>
+        <p>Try adjusting your filters or create a new request.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

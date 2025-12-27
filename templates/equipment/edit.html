@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ equipment.name }} - GearGuard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('equipment.view', id=equipment.id) }}" class="back-link">← Back to Equipment</a>
+            <h1>Edit Equipment</h1>
+        </div>
+        {% if current_user.is_admin() %}
+        <div class="header-actions">
+            <form method="POST" action="{{ url_for('equipment.delete', id=equipment.id) }}" 
+                  onsubmit="return confirm('Are you sure you want to delete this equipment? This cannot be undone.');">
+                <button type="submit" class="btn btn-danger">Delete Equipment</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="form-container">
+        <form method="POST" class="standard-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Equipment Name *</label>
+                    <input type="text" id="name" name="name" class="form-control" value="{{ equipment.name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="serial_number">Serial Number *</label>
+                    <input type="text" id="serial_number" name="serial_number" class="form-control" value="{{ equipment.serial_number }}" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="department">Department *</label>
+                    <input type="text" id="department" name="department" class="form-control" value="{{ equipment.department }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" name="location" class="form-control" value="{{ equipment.location or '' }}">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="team_id">Maintenance Team *</label>
+                    <select id="team_id" name="team_id" class="form-control" required>
+                        {% for team in teams %}
+                        <option value="{{ team.id }}" {% if team.id == equipment.team_id %}selected{% endif %}>{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="default_technician_id">Default Technician</label>
+                    <select id="default_technician_id" name="default_technician_id" class="form-control">
+                        <option value="">None</option>
+                        {% for tech in technicians %}
+                        <option value="{{ tech.id }}" {% if equipment.default_technician_id == tech.id %}selected{% endif %}>{{ tech.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="assigned_employee">Assigned Employee</label>
+                <input type="text" id="assigned_employee" name="assigned_employee" class="form-control" value="{{ equipment.assigned_employee or '' }}">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="purchase_date">Purchase Date</label>
+                    <input type="date" id="purchase_date" name="purchase_date" class="form-control" value="{{ equipment.purchase_date.strftime('%Y-%m-%d') if equipment.purchase_date else '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="warranty_expiry">Warranty Expiry</label>
+                    <input type="date" id="warranty_expiry" name="warranty_expiry" class="form-control" value="{{ equipment.warranty_expiry.strftime('%Y-%m-%d') if equipment.warranty_expiry else '' }}">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="is_scrapped" {% if equipment.is_scrapped %}checked{% endif %}>
+                    <span>Mark as Scrapped</span>
+                </label>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{{ url_for('equipment.view', id=equipment.id) }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

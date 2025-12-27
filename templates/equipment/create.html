@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Add Equipment - GearGuard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('equipment.list_equipment') }}" class="back-link">← Back to Equipment</a>
+            <h1>Add New Equipment</h1>
+        </div>
+    </div>
+    
+    <div class="form-container">
+        <form method="POST" class="standard-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Equipment Name *</label>
+                    <input type="text" id="name" name="name" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="serial_number">Serial Number *</label>
+                    <input type="text" id="serial_number" name="serial_number" class="form-control" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="department">Department *</label>
+                    <input type="text" id="department" name="department" class="form-control" required 
+                           placeholder="e.g., Production, IT, Warehouse">
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" name="location" class="form-control" 
+                           placeholder="e.g., Building A, Floor 2">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="team_id">Maintenance Team *</label>
+                    <select id="team_id" name="team_id" class="form-control" required>
+                        <option value="">Select Team</option>
+                        {% for team in teams %}
+                        <option value="{{ team.id }}">{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="default_technician_id">Default Technician</label>
+                    <select id="default_technician_id" name="default_technician_id" class="form-control">
+                        <option value="">None</option>
+                        {% for tech in technicians %}
+                        <option value="{{ tech.id }}">{{ tech.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="assigned_employee">Assigned Employee</label>
+                <input type="text" id="assigned_employee" name="assigned_employee" class="form-control" 
+                       placeholder="Employee name or ID">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="purchase_date">Purchase Date</label>
+                    <input type="date" id="purchase_date" name="purchase_date" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="warranty_expiry">Warranty Expiry</label>
+                    <input type="date" id="warranty_expiry" name="warranty_expiry" class="form-control">
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create Equipment</button>
+                <a href="{{ url_for('equipment.list_equipment') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

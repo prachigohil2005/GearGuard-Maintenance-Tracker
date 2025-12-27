@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Equipment - GearGuard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <h1>🏭 Equipment Management</h1>
+        {% if current_user.is_manager() %}
+        <div class="header-actions">
+            <a href="{{ url_for('equipment.create') }}" class="btn btn-primary">+ Add Equipment</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Filters -->
+    <div class="filter-section">
+        <form method="GET" class="filter-form">
+            <input type="text" name="search" placeholder="Search by name or serial..." 
+                   value="{{ filters.search }}" class="form-control">
+            
+            <select name="department" class="form-control">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                <option value="{{ dept }}" {% if dept == filters.department %}selected{% endif %}>{{ dept }}</option>
+                {% endfor %}
+            </select>
+            
+            <select name="status" class="form-control">
+                <option value="">All Status</option>
+                <option value="operational" {% if filters.status == 'operational' %}selected{% endif %}>Operational</option>
+                <option value="scrapped" {% if filters.status == 'scrapped' %}selected{% endif %}>Scrapped</option>
+            </select>
+            
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            <a href="{{ url_for('equipment.list_equipment') }}" class="btn btn-secondary">Clear</a>
+        </form>
+    </div>
+    
+    <!-- Equipment Grid -->
+    <div class="equipment-grid">
+        {% for equipment in equipment_list %}
+        <div class="equipment-card {% if equipment.is_scrapped %}scrapped{% endif %}">
+            <div class="equipment-header">
+                <h3>{{ equipment.name }}</h3>
+                <span class="equipment-badge {{ 'badge-danger' if equipment.is_scrapped else 'badge-success' }}">
+                    {{ equipment.get_status_badge() }}
+                </span>
+            </div>
+            
+            <div class="equipment-info">
+                <div class="info-row">
+                    <span class="info-label">Serial:</span>
+                    <span>{{ equipment.serial_number }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Department:</span>
+                    <span>{{ equipment.department }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Location:</span>
+                    <span>{{ equipment.location or '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Team:</span>
+                    <span>{{ equipment.maintenance_team.name }}</span>
+                </div>
+            </div>
+            
+            <div class="equipment-actions">
+                <a href="{{ url_for('equipment.view', id=equipment.id) }}" class="btn btn-sm btn-primary">View Details</a>
+                <a href="{{ url_for('requests.list_requests') }}?equipment={{ equipment.id }}" class="btn btn-sm btn-secondary">
+                    Maintenance
+                    {% if equipment.get_open_requests_count() > 0 %}
+                    <span class="badge badge-warning">{{ equipment.get_open_requests_count() }}</span>
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if not equipment_list %}
+    <div class="empty-state">
+        <h3>No equipment found</h3>
+        <p>Try adjusting your filters or add new equipment.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

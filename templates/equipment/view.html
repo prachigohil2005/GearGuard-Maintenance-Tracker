@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}{{ equipment.name }} - GearGuard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('equipment.list_equipment') }}" class="back-link">← Back to Equipment</a>
+            <h1>{{ equipment.name }}</h1>
+        </div>
+        <div class="header-actions">
+            {% if current_user.is_manager() %}
+            <a href="{{ url_for('equipment.edit', id=equipment.id) }}" class="btn btn-secondary">Edit</a>
+            {% endif %}
+            <a href="{{ url_for('requests.create') }}?equipment={{ equipment.id }}" class="btn btn-primary">+ Create Request</a>
+        </div>
+    </div>
+    
+    <div class="detail-container">
+        <div class="detail-card">
+            <h2>Equipment Details</h2>
+            
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <label>Serial Number</label>
+                    <p>{{ equipment.serial_number }}</p>
+                </div>
+                
+                <div class="detail-item">
+                    <label>Status</label>
+                    <p><span class="badge {{ 'badge-danger' if equipment.is_scrapped else 'badge-success' }}">
+                        {{ equipment.get_status_badge() }}
+                    </span></p>
+                </div>
+                
+                <div class="detail-item">
+                    <label>Department</label>
+                    <p>{{ equipment.department }}</p>
+                </div>
+                
+                <div class="detail-item">
+                    <label>Location</label>
+                    <p>{{ equipment.location or '-' }}</p>
+                </div>
+                
+                <div class="detail-item">
+                    <label>Assigned Employee</label>
+                    <p>{{ equipment.assigned_employee or '-' }}</p>
+                </div>
+                
+                <div class="detail-item">
+                    <label>Maintenance Team</label>
+                    <p><a href="{{ url_for('teams.view', id=equipment.team_id) }}">{{ equipment.maintenance_team.name }}</a></p>
+                </div>
+                
+                <div class="detail-item">
+                    <label>Default Technician</label>
+                    <p>{{ equipment.default_technician.name if equipment.default_technician else '-' }}</p>
+                </div>
+                
+                <div class="detail-item">
+                    <label>Purchase Date</label>
+                    <p>{{ equipment.purchase_date.strftime('%Y-%m-%d') if equipment.purchase_date else '-' }}</p>
+                </div>
+                
+                <div class="detail-item">
+                    <label>Warranty Expiry</label>
+                    <p>{{ equipment.warranty_expiry.strftime('%Y-%m-%d') if equipment.warranty_expiry else '-' }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="detail-card">
+            <div class="card-header-with-action">
+                <h2>Maintenance History</h2>
+                <span class="badge badge-info">{{ maintenance_requests|length }} Total</span>
+            </div>
+            
+            {% if maintenance_requests %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Subject</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Technician</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in maintenance_requests %}
+                        <tr>
+                            <td>#{{ req.id }}</td>
+                            <td>{{ req.subject }}</td>
+                            <td><span class="badge badge-{{ 'warning' if req.request_type == 'Corrective' else 'info' }}">{{ req.request_type }}</span></td>
+                            <td><span class="badge {{ req.get_status_class() }}">{{ req.status }}</span></td>
+                            <td>{{ req.assigned_technician.name if req.assigned_technician else 'Unassigned' }}</td>
+                            <td>{{ req.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <a href="{{ url_for('requests.view', id=req.id) }}" class="btn btn-sm btn-primary">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No maintenance requests yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

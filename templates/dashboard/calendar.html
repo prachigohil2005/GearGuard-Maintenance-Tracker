@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar - GearGuard{% endblock %}
+
+{% block extra_css %}
+<style>
+.calendar-container {
+    padding: 2rem;
+}
+
+.calendar-wrapper {
+    background: white;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-top: 2rem;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.calendar-nav {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: #dee2e6;
+    border: 1px solid #dee2e6;
+}
+
+.calendar-day-header {
+    background: #f8f9fa;
+    padding: 1rem;
+    text-align: center;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.calendar-day {
+    background: white;
+    min-height: 100px;
+    padding: 0.5rem;
+    position: relative;
+}
+
+.calendar-day.other-month {
+    background: #f8f9fa;
+    color: #6c757d;
+}
+
+.calendar-day.today {
+    background: #e7f5ff;
+}
+
+.day-number {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.calendar-event {
+    background: #0d6efd;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    margin-bottom: 0.25rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-event:hover {
+    background: #0b5ed7;
+}
+
+.calendar-event.status-repaired {
+    background: #198754;
+}
+
+.calendar-event.status-scrap {
+    background: #dc3545;
+}
+
+.event-list {
+    margin-top: 2rem;
+}
+
+.event-item {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.event-details h4 {
+    margin: 0 0 0.5rem 0;
+}
+
+.event-meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="calendar-container">
+    <div class="page-header">
+        <h1>📅 Preventive Maintenance Calendar</h1>
+        <div class="header-actions">
+            <a href="{{ url_for('requests.create') }}" class="btn btn-primary">+ Schedule Maintenance</a>
+        </div>
+    </div>
+    
+    <div class="calendar-wrapper">
+        <div class="calendar-header">
+            <h2 id="currentMonth"></h2>
+            <div class="calendar-nav">
+                <button class="btn btn-secondary" onclick="previousMonth()">← Previous</button>
+                <button class="btn btn-secondary" onclick="nextMonth()">Next →</button>
+                <button class="btn btn-secondary" onclick="today()">Today</button>
+            </div>
+        </div>
+        
+        <div id="calendar"></div>
+    </div>
+    
+    <div class="event-list">
+        <h2>Upcoming Preventive Maintenance</h2>
+        {% for event in events %}
+        {% if event.status != 'Repaired' and event.status != 'Scrap' %}
+        <div class="event-item">
+            <div class="event-details">
+                <h4>{{ event.title }}</h4>
+                <div class="event-meta">
+                    <span>📅 {{ event.start }}</span> · 
+                    <span>🏭 {{ event.equipment }}</span> · 
+                    <span>👤 {{ event.technician }}</span> · 
+                    <span class="badge {{ 'status-new' if event.status == 'New' else 'status-progress' }}">{{ event.status }}</span>
+                </div>
+            </div>
+            <div>
+                <a href="{{ url_for('requests.view', id=event.id) }}" class="btn btn-primary">View Details</a>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const events = {{ events|tojson }};
+let currentDate = new Date();
+
+function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    // Update header
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    
+    // Build calendar HTML
+    let html = '<div class="calendar-grid">';
+    
+    // Day headers
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    dayNames.forEach(day => {
+        html += `<div class="calendar-day-header">${day}</div>`;
+    });
+    
+    // Previous month days
+    for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        html += `<div class="calendar-day other-month"><div class="day-number">${day}</div></div>`;
+    }
+    
+    // Current month days
+    const today = new Date();
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dateStr = date.toISOString().split('T')[0];
+        const isToday = date.toDateString() === today.toDateString();
+        
+        // Find events for this day
+        const dayEvents = events.filter(e => e.start === dateStr);
+        
+        let eventsHtml = '';
+        dayEvents.forEach(event => {
+            const statusClass = event.status === 'Repaired' ? 'status-repaired' : 
+                              event.status === 'Scrap' ? 'status-scrap' : '';
+            eventsHtml += `<div class="calendar-event ${statusClass}" onclick="window.location.href='/requests/${event.id}'" title="${event.title}">${event.title}</div>`;
+        });
+        
+        html += `<div class="calendar-day ${isToday ? 'today' : ''}">
+                    <div class="day-number">${day}</div>
+                    ${eventsHtml}
+                 </div>`;
+    }
+    
+    // Next month days
+    const totalCells = firstDay + daysInMonth;
+    const remainingCells = 7 - (totalCells % 7);
+    if (remainingCells < 7) {
+        for (let i = 1; i <= remainingCells; i++) {
+            html += `<div class="calendar-day other-month"><div class="day-number">${i}</div></div>`;
+        }
+    }
+    
+    html += '</div>';
+    document.getElementById('calendar').innerHTML = html;
+}
+
+function previousMonth() {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+}
+
+function nextMonth() {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
+}
+
+function today() {
+    currentDate = new Date();
+    renderCalendar();
+}
+
+// Initial render
+renderCalendar();
+</script>
+{% endblock %}

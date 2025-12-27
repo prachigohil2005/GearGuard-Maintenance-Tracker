@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Kanban Board - GearGuard{% endblock %}
+
+{% block extra_css %}
+<style>
+.kanban-container {
+    padding: 2rem;
+}
+
+.kanban-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.kanban-column {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 500px;
+}
+
+.kanban-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.kanban-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.kanban-count {
+    background: #6c757d;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+}
+
+.kanban-card {
+    background: white;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    cursor: move;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kanban-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.kanban-card.dragging {
+    opacity: 0.5;
+}
+
+.kanban-card.overdue {
+    border-left: 4px solid #dc3545;
+}
+
+.card-id {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.card-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.card-equipment {
+    font-size: 0.875rem;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+}
+
+.card-technician {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.technician-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.column-new .kanban-header { color: #0d6efd; }
+.column-progress .kanban-header { color: #ffc107; }
+.column-repaired .kanban-header { color: #198754; }
+.column-scrap .kanban-header { color: #dc3545; }
+
+.drop-zone {
+    min-height: 100px;
+    border: 2px dashed #dee2e6;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+}
+
+.drop-zone.drag-over {
+    background: #e7f5ff;
+    border-color: #0d6efd;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kanban-container">
+    <div class="page-header">
+        <h1>Kanban Board</h1>
+        <div class="header-actions">
+            <a href="{{ url_for('requests.create') }}" class="btn btn-primary">+ New Request</a>
+        </div>
+    </div>
+    
+    <div class="kanban-board">
+        <!-- New Column -->
+        <div class="kanban-column column-new" data-status="New">
+            <div class="kanban-header">
+                <span class="kanban-title">🆕 New</span>
+                <span class="kanban-count">{{ new_requests|length }}</span>
+            </div>
+            <div class="kanban-cards">
+                {% for req in new_requests %}
+                <div class="kanban-card {% if req.is_overdue() %}overdue{% endif %}" 
+                     draggable="true" 
+                     data-id="{{ req.id }}"
+                     onclick="window.location.href='{{ url_for('requests.view', id=req.id) }}'">
+                    <div class="card-id">#{{ req.id }}</div>
+                    <div class="card-title">{{ req.subject }}</div>
+                    <div class="card-equipment">🏭 {{ req.equipment.name }}</div>
+                    <div class="card-meta">
+                        <span class="badge badge-{{ 'warning' if req.request_type == 'Corrective' else 'info' }}">
+                            {{ req.request_type }}
+                        </span>
+                        {% if req.assigned_technician %}
+                        <div class="card-technician">
+                            <div class="technician-avatar">{{ req.assigned_technician.name[0] }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- In Progress Column -->
+        <div class="kanban-column column-progress" data-status="In Progress">
+            <div class="kanban-header">
+                <span class="kanban-title">⚙️ In Progress</span>
+                <span class="kanban-count">{{ in_progress_requests|length }}</span>
+            </div>
+            <div class="kanban-cards">
+                {% for req in in_progress_requests %}
+                <div class="kanban-card {% if req.is_overdue() %}overdue{% endif %}" 
+                     draggable="true" 
+                     data-id="{{ req.id }}"
+                     onclick="window.location.href='{{ url_for('requests.view', id=req.id) }}'">
+                    <div class="card-id">#{{ req.id }}</div>
+                    <div class="card-title">{{ req.subject }}</div>
+                    <div class="card-equipment">🏭 {{ req.equipment.name }}</div>
+                    <div class="card-meta">
+                        <span class="badge badge-{{ 'warning' if req.request_type == 'Corrective' else 'info' }}">
+                            {{ req.request_type }}
+                        </span>
+                        {% if req.assigned_technician %}
+                        <div class="card-technician">
+                            <div class="technician-avatar">{{ req.assigned_technician.name[0] }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Repaired Column -->
+        <div class="kanban-column column-repaired" data-status="Repaired">
+            <div class="kanban-header">
+                <span class="kanban-title">✅ Repaired</span>
+                <span class="kanban-count">{{ repaired_requests|length }}</span>
+            </div>
+            <div class="kanban-cards">
+                {% for req in repaired_requests %}
+                <div class="kanban-card" 
+                     draggable="true" 
+                     data-id="{{ req.id }}"
+                     onclick="window.location.href='{{ url_for('requests.view', id=req.id) }}'">
+                    <div class="card-id">#{{ req.id }}</div>
+                    <div class="card-title">{{ req.subject }}</div>
+                    <div class="card-equipment">🏭 {{ req.equipment.name }}</div>
+                    <div class="card-meta">
+                        <span class="badge badge-{{ 'warning' if req.request_type == 'Corrective' else 'info' }}">
+                            {{ req.request_type }}
+                        </span>
+                        {% if req.assigned_technician %}
+                        <div class="card-technician">
+                            <div class="technician-avatar">{{ req.assigned_technician.name[0] }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Scrap Column -->
+        <div class="kanban-column column-scrap" data-status="Scrap">
+            <div class="kanban-header">
+                <span class="kanban-title">🗑️ Scrap</span>
+                <span class="kanban-count">{{ scrap_requests|length }}</span>
+            </div>
+            <div class="kanban-cards">
+                {% for req in scrap_requests %}
+                <div class="kanban-card" 
+                     draggable="true" 
+                     data-id="{{ req.id }}"
+                     onclick="window.location.href='{{ url_for('requests.view', id=req.id) }}'">
+                    <div class="card-id">#{{ req.id }}</div>
+                    <div class="card-title">{{ req.subject }}</div>
+                    <div class="card-equipment">🏭 {{ req.equipment.name }}</div>
+                    <div class="card-meta">
+                        <span class="badge badge-{{ 'warning' if req.request_type == 'Corrective' else 'info' }}">
+                            {{ req.request_type }}
+                        </span>
+                        {% if req.assigned_technician %}
+                        <div class="card-technician">
+                            <div class="technician-avatar">{{ req.assigned_technician.name[0] }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/kanban.js') }}"></script>
+{% endblock %}
