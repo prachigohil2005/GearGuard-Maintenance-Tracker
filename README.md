@@ -94,31 +94,3 @@ gearguard-maintenance-tracker1222/
 ├── next.config.js
 └── tsconfig.json
 
-⚙️ Installation & Setup
-1️⃣ Clone Repository
-git clone https://github.com/your-username/gearguard-maintenance-tracker1222.git
-cd gearguard-maintenance-tracker1222
-
-2️⃣ Create & Activate Virtual Environment
-python -m venv venv
-venv\Scripts\activate
-
-3️⃣ Install Dependencies
-pip install -r requirements.txt
-
-4️⃣ Seed Database (Optional)
-python seed_data.py
-
-5️⃣ Run the Application
-python app.py
-
-6️⃣ Open in Browser
-http://127.0.0.1:5000
-
-🔁 Application Modules
-Module Description
-Auth User login & authentication
-Dashboard System overview
-Equipment Equipment records
-Requests Maintenance request handling
-Teams Team and role management
